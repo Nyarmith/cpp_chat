@@ -6,21 +6,18 @@
 #include <boost/thread/thread.hpp>
 #include "chat_message.hpp"
 
-using boost::asio::ip::tcp;
-
-typedef std::deque<chat_message> chat_message_queue;
-
 class chat_client
 {
 public:
   chat_client(boost::asio::io_service& io_service,
-      tcp::resolver::iterator endpoint_iterator)
+      tcp::resolver::iterator endpoint_iterator, const char* uname)
     : io_service_(io_service),
       socket_(io_service)
   {
     boost::asio::async_connect(socket_, endpoint_iterator,
         boost::bind(&chat_client::handle_connect, this,
           boost::asio::placeholders::error));
+    username = std::string(uname);
   }
 
   void write(const chat_message& msg)
@@ -31,6 +28,13 @@ public:
   void close()
   {
     io_service_.post(boost::bind(&chat_client::do_close, this));
+  }
+  
+  void queue_message(std::string){
+      //do something with the message, idk yet
+      this.
+      this.encode_header();
+      this.write()
   }
 
 private:
@@ -112,6 +116,10 @@ private:
     }
   }
 
+  void set_uname(const char* name){
+      username = std::string(name);
+  }
+
   void do_close()
   {
     socket_.close();
@@ -122,47 +130,5 @@ private:
   tcp::socket socket_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;
+  std::string username;
 };
-
-int main(int argc, char* argv[])
-{
-  try
-  {
-    if (argc != 3)
-    {
-      std::cerr << "Usage: chat_client <host> <port>\n";
-      return 1;
-    }
-
-    boost::asio::io_service io_service;
-
-    tcp::resolver resolver(io_service);
-    tcp::resolver::query query(argv[1], argv[2]);
-    tcp::resolver::iterator iterator = resolver.resolve(query);
-
-    chat_client c(io_service, iterator);
-
-    boost::thread t(boost::bind(&boost::asio::io_service::run, &io_service));
-
-    char line[chat_message::max_body_length + 1];
-    while (std::cin.getline(line, chat_message::max_body_length + 1))
-    {
-      using namespace std; // For strlen and memcpy.
-      chat_message msg;
-      msg.body_length(strlen(line));
-      memcpy(msg.body(), line, msg.body_length());
-      msg.encode_header();
-      c.write(msg);
-    }
-
-    c.close();
-    t.join();
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << "Exception: " << e.what() << "\n";
-  }
-
-  return 0;
-}
-

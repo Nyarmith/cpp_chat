@@ -12,11 +12,9 @@
 
 using boost::asio::ip::tcp;
 
-//----------------------------------------------------------------------
 
 typedef std::deque<chat_message> chat_message_queue;
 
-//----------------------------------------------------------------------
 
 class chat_participant
 {
@@ -27,7 +25,6 @@ public:
 
 typedef boost::shared_ptr<chat_participant> chat_participant_ptr;
 
-//----------------------------------------------------------------------
 
 class chat_room
 {
@@ -60,7 +57,6 @@ private:
   chat_message_queue recent_msgs_;
 };
 
-//----------------------------------------------------------------------
 
 class chat_session
   : public chat_participant,
