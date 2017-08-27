@@ -11,6 +11,7 @@ using boost::asio::ip::tcp;
 namespace util {
     WINDOW* create_newwin(int height, int width, int starty, int startx);
     void    destroy_win  (WINDOW * local_win);
+    char*   give_cstr(std::string& ourstr);
 }
 
 class chat_client_gui {
@@ -67,7 +68,7 @@ class chat_client_gui {
 
     //Handlers for asio
     void handle_connect(const boost::system::error_code& error);
-    void handle_read   (const boost::system::error_code& error);
+    void handle_read  (const boost::system::error_code& error);
     void do_write      (std::string msg);
     void handle_write  (const boost::system::error_code& error);
     void do_close();

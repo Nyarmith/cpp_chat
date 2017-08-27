@@ -127,8 +127,8 @@ void chat_client_gui::enter_msg(){
 
 void chat_client_gui::backspace_msg(){
     if(prompt_text_.length() != 0){
-        //prompt_text_.pop_back();    //c++11  !!!
-        prompt_text_ = prompt_text_.substr(0, prompt_text_.length() - 1);
+        prompt_text_.pop_back();    //c++11  !!!
+        //prompt_text_ = prompt_text_.substr(0, prompt_text_.length() - 1);
         draw();
     }
 }
@@ -166,7 +166,7 @@ void chat_client_gui::do_write(std::string msg){
     if (!write_in_progress)
     {
         boost::asio::async_write(socket_,
-                boost::asio::buffer(write_messages_.front().data(),
+                boost::asio::buffer(util::give_cstr(write_messages_.front()),
                     write_messages_.front().length()),
                 boost::bind(&chat_client_gui::handle_write, this,
                     boost::asio::placeholders::error));
@@ -181,7 +181,7 @@ void chat_client_gui::handle_write(const boost::system::error_code& error){
         if (!write_messages_.empty())
         {
             boost::asio::async_write(socket_,
-                    boost::asio::buffer(write_messages_.front().data(),
+                    boost::asio::buffer(util::give_cstr(write_messages_.front()),
                         write_messages_.front().length()),
                     boost::bind(&chat_client_gui::handle_write, this,
                         boost::asio::placeholders::error));
@@ -197,7 +197,7 @@ void chat_client_gui::handle_connect(const boost::system::error_code& error){
     if (!error)
     {
         boost::asio::async_read(socket_,
-                boost::asio::buffer( read_msg_.data(), msg_max_size_),
+                boost::asio::buffer( util::give_cstr(read_msg_), msg_max_size_),
                 boost::bind(&chat_client_gui::handle_read, this,
                     boost::asio::placeholders::error));
 
@@ -218,7 +218,7 @@ void chat_client_gui::handle_read(const boost::system::error_code& error){
 
         //set up next handler
         boost::asio::async_read(socket_,
-                boost::asio::buffer(read_msg_.data(), msg_max_size_),
+                boost::asio::buffer(util::give_cstr(read_msg_), msg_max_size_),
                 boost::bind(&chat_client_gui::handle_read, this,
                     boost::asio::placeholders::error));
     }
@@ -230,4 +230,25 @@ void chat_client_gui::handle_read(const boost::system::error_code& error){
 
 void chat_client_gui::do_close(){
     socket_.close();
+}
+
+char*   util::give_cstr(std::string& ourstr){
+    char *cstr = new char[ourstr.length() + 1]; //memory leak
+    strcpy(cstr, ourstr.c_str());
+    return cstr;
+}
+
+WINDOW* util::create_newwin(int height, int width, int starty, int startx){
+    WINDOW *local_win;
+
+	local_win = newwin(height, width, starty, startx);
+	box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 * for the vertical and horizontal
+					 * lines			*/
+	wrefresh(local_win);		/* Show that box 		*/
+
+	return local_win;
+}
+void    util::destroy_win  (WINDOW * local_win){
+	delwin(local_win);
 }
