@@ -37,25 +37,25 @@ void chat_client_gui::run(){
     getmaxyx(stdscr, y, x);
     noecho();
     //create the windows
-
-    int rhs  =  height_ - prompt_height_ - border_size_; //right-horizontal-split
-    int rss  =  rooms_width_ + border_size_; //right-side-start
-    int rssz =  width_ - rss; //right-side-size
-
-    logo_window_   = util::create_newwin(logo_height_, rooms_width_, 0, 0  );  //top left
-    chat_window_   = util::create_newwin(rhs         , width_ - rss, 0, rss);  //top right
-    rooms_window_  = util::create_newwin(height_ - logo_height_ - border_size_,  rooms_width_,
-                                         logo_height_ + border_size_, 0);   //bottom left
-
-    prompt_window_ = util::create_newwin(prompt_height_, width_ - rss,
-                                         rhs + border_size_, rss);   //bottom right
     
+    int chat_height = height_ - border_size_ - prompt_height_;
+    int rooms_height= height_ - border_size_ - logo_height_;
+    int right_width = width_ - border_size_ - rooms_width_;
+
+    logo_window_   = util::create_newwin(0, 0, logo_height_, rooms_width_);  //top left
+    chat_window_   = util::create_newwin(0, rooms_width_ + border_size_,
+                                         chat_height, right_width);  //top right
+    rooms_window_  = util::create_newwin(logo_height_ + border_size_, 0,
+                                         rooms_height, rooms_width_); //bottom left
+                                        
+    prompt_window_ = util::create_newwin(chat_height + border_size_, rooms_width_ + border_size_,
+                                         prompt_height_, right_width);
     //draw gui
     draw();
 
     //wait in eternal loop for new messages
     while(!exiting_){
-        c = getch(); //this is blocking, but the other threads should update the screen when we get new messages
+        c = wgetch(prompt_window_); //this is blocking, but the other threads should update the screen when we get new messages
         switch(c){
             case KEY_ENTER:
                 enter_msg();
@@ -64,11 +64,11 @@ void chat_client_gui::run(){
                 backspace_msg();
                 break;
             default:
-                if (isprint(c)){
+                //if (isprint(c)){
                     //prompt_text_.append(c); //please work implicitly
                     prompt_text_ += static_cast<char>(c);
                     draw();
-                }
+                //}
                 break;
         }
     }
@@ -90,7 +90,7 @@ void chat_client_gui::draw(){
     int rss  =  rooms_width_ + border_size_; //right-side-start
 
     //left horizontal border
-    for (int x=0; x<rhs; x++){
+    for (int x=0; x<=rooms_width_; x++){
         for (int y=0; y < border_size_; y++)
             mvaddch(logo_height_ + y, x, '#');
     }
@@ -108,11 +108,15 @@ void chat_client_gui::draw(){
     }
     
     draw_logo_window();
+    wrefresh(logo_window_);
     draw_chat_window();
+    wrefresh(chat_window_);
     draw_rooms_window();
+    wrefresh(rooms_window_);
     draw_prompt_window();
+    wrefresh(prompt_window_);
 
-    refresh();
+    //refresh();
 }
 
 void chat_client_gui::enter_msg(){
@@ -156,7 +160,9 @@ void chat_client_gui::draw_rooms_window(){
 }
 
 void chat_client_gui::draw_prompt_window(){
-    wprintw(prompt_window_, "%s", prompt_text_.c_str());
+    if (prompt_text_.length() != 0){
+        mvwprintw(prompt_window_,0,0, "> %s", prompt_text_.c_str());
+    }
 }
 
 //handlers for asio
@@ -238,10 +244,10 @@ char*   util::give_cstr(std::string& ourstr){
     return cstr;
 }
 
-WINDOW* util::create_newwin(int height, int width, int starty, int startx){
+WINDOW* util::create_newwin(int y, int x, int hgt, int wdt){
     WINDOW *local_win;
 
-	local_win = newwin(height, width, starty, startx);
+	local_win = newwin(hgt, wdt, y, x);
 	box(local_win, 0 , 0);		/* 0, 0 gives default characters 
 					 * for the vertical and horizontal
 					 * lines			*/
