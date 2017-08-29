@@ -59,9 +59,9 @@ class chat_client_gui {
     //Constants
     const int width_          =  150;
     const int height_         =  40;
-    const int rooms_width_    =  30;
-    const int logo_height_    =  3;
-    const int prompt_height_  =  2;
+    const int rooms_width_    =  32;
+    const int logo_height_    =  5;
+    const int prompt_height_  =  4;
     const int border_size_    =  1;
     const int msg_max_size_   =  512;
 

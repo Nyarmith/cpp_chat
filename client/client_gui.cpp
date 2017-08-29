@@ -16,7 +16,7 @@ chat_client_gui::chat_client_gui(boost::asio::io_service& io_service,
     ////socket_ = tcp::socket(io_service); //apparently this makes a socket
     //socket_(io_service); //apparently this makes a socket
 
-    host_ = host+port;
+    host_ = host+ " " + port;
 
     //make a handler for when we connect
     boost::asio::async_connect(socket_, endpoint_iterator,
@@ -50,6 +50,7 @@ void chat_client_gui::run(){
                                         
     prompt_window_ = util::create_newwin(chat_height + border_size_, rooms_width_ + border_size_,
                                          prompt_height_, right_width);
+    keypad(prompt_window_, TRUE);
     //draw gui
     draw();
 
@@ -57,18 +58,18 @@ void chat_client_gui::run(){
     while(!exiting_){
         c = wgetch(prompt_window_); //this is blocking, but the other threads should update the screen when we get new messages
         switch(c){
-            case KEY_ENTER:
+            case 10: //I used KEY_ENTER but it didn't work
                 enter_msg();
                 break;
             case KEY_BACKSPACE:
                 backspace_msg();
                 break;
             default:
-                //if (isprint(c)){
+                if (isprint(c)){
                     //prompt_text_.append(c); //please work implicitly
                     prompt_text_ += static_cast<char>(c);
                     draw();
-                //}
+                }
                 break;
         }
     }
@@ -83,8 +84,8 @@ void chat_client_gui::run(){
 
 void chat_client_gui::draw(){
 
-    clear();
 
+    /*
     //draw border between windows
     int rhs  =  height_ - prompt_height_ - border_size_; //right-horizontal-split
     int rss  =  rooms_width_ + border_size_; //right-side-start
@@ -106,15 +107,13 @@ void chat_client_gui::draw(){
         for (int x = 0; x < border_size_; x++)
             mvaddch(y, x + rss, '#');
     }
+    refresh();
+    */
     
     draw_logo_window();
-    wrefresh(logo_window_);
     draw_chat_window();
-    wrefresh(chat_window_);
     draw_rooms_window();
-    wrefresh(rooms_window_);
     draw_prompt_window();
-    wrefresh(prompt_window_);
 
     //refresh();
 }
@@ -142,27 +141,44 @@ void chat_client_gui::send_message(const std::string& msg){
 }
 
 void chat_client_gui::draw_logo_window(){
+    wclear(logo_window_);
     //for now just a simple set of asterisks
-    for (int x=0; x<rooms_width_; x++)
-        for (int y=0; y<logo_height_; y++)
+    for (int x=1; x<rooms_width_; x++)
+        for (int y=1; y<logo_height_; y++)
             mvwaddch(logo_window_, y, x, '~');
+
+    box(logo_window_, 0 , 0);
+    wrefresh(logo_window_);
 }
 
 void chat_client_gui::draw_chat_window(){
+    wclear(chat_window_);
     int chat_height = (height_ - border_size_ - prompt_height_);
     for (int i=0; i < chat_messages_.size() && i < chat_height; i++){
-        mvwprintw(chat_window_, chat_height - i, 0, "%s", chat_messages_[i].c_str());
+        mvwprintw(chat_window_, i, 1, "%s", chat_messages_[i].c_str());
     }
+    box(chat_window_, 0 , 0);
+    wrefresh(chat_window_);
 }
 
 void chat_client_gui::draw_rooms_window(){
-    wprintw(rooms_window_, "%s", host_.c_str());
+    wclear(rooms_window_);
+    // TODO, update when multi-chat support is added
+    mvwprintw(rooms_window_, 1, 1, "%s", host_.c_str());
+    box(rooms_window_, 0 , 0);
+    wrefresh(rooms_window_);
 }
 
 void chat_client_gui::draw_prompt_window(){
+    wclear(prompt_window_);
     if (prompt_text_.length() != 0){
-        mvwprintw(prompt_window_,0,0, "> %s", prompt_text_.c_str());
+        mvwprintw(prompt_window_,1,1, "> %s", prompt_text_.c_str());
     }
+    else{
+        mvwprintw(prompt_window_,1,1, "> ");
+    }
+    box(prompt_window_, 0 , 0);
+    wrefresh(prompt_window_);
 }
 
 //handlers for asio
@@ -248,9 +264,9 @@ WINDOW* util::create_newwin(int y, int x, int hgt, int wdt){
     WINDOW *local_win;
 
 	local_win = newwin(hgt, wdt, y, x);
-	box(local_win, 0 , 0);		/* 0, 0 gives default characters 
-					 * for the vertical and horizontal
-					 * lines			*/
+	//box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 //* for the vertical and horizontal
+					 //* lines			*/
 	wrefresh(local_win);		/* Show that box 		*/
 
 	return local_win;
